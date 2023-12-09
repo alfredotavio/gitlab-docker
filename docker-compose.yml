@@ -1,0 +1,47 @@
+version: "3.7"
+
+networks:
+  network-gitlab:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.12.0.0/24
+
+
+services:
+  gitlab:
+    container_name: gitlab
+    image: "gitlab/gitlab-ce:16.6.1-ce.0"
+    hostname: "gitlab.alfredocastro.com.br"
+    environment:
+      TZ: America/Sao_Paulo
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url "https://gitlab.alfredocastro.com.br"
+    networks:
+      network-gitlab:
+        ipv4_address: 10.12.0.10
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2222:22"
+    volumes:
+      - "/opt/gitlab-docker/config:/etc/gitlab"
+      - "/opt/gitlab-docker/logs:/var/log/gitlab"
+      - "/opt/gitlab-docker/data:/var/opt/gitlab"
+    shm_size: "256m"
+
+  gitlab-runner:
+    container_name: gitlab-runner
+    image: "gitlab/gitlab-runner:alpine"
+    environment:
+      TZ: America/Sao_Paulo
+    networks:
+      network-gitlab:
+        ipv4_address: 10.12.0.11
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - "/opt/gitlab-docker/gitlab-runner:/etc/gitlab-runner"
+    depends_on:
+      - gitlab
